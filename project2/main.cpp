@@ -50,7 +50,7 @@ int main() {
 
         Size timeSteps = 100;
         ext::shared_ptr<PricingEngine> engine(
-                new BinomialVanillaEngine<ExtendedJarrowRudd_2>(bsmProcess,timeSteps));
+                new BinomialVanillaEngine_2<ExtendedJarrowRudd_2>(bsmProcess,timeSteps));
         americanOption.setPricingEngine(engine);
 
         auto startTime = std::chrono::steady_clock::now();
