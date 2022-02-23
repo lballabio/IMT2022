@@ -1,5 +1,6 @@
 
 #include "extendedbinomialtree.hpp"
+#include "binomialengine.hpp"
 #include <ql/pricingengines/vanilla/binomialengine.hpp>
 #include <ql/experimental/lattices/extendedbinomialtree.hpp>
 #include <ql/instruments/vanillaoption.hpp>
