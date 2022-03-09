@@ -114,6 +114,8 @@ namespace QuantLib {
 
         TimeGrid grid(maturity, timeSteps_);
 
+/* We can modify next line with : maturity - deltaTtimestep, timeSteps -1 
+   to generate a tree with 1 less depth than the base tree */
         boost::shared_ptr<T> tree(new T(bs, maturity, timeSteps_,
                                         payoff->strike()));
 
@@ -147,6 +149,11 @@ namespace QuantLib {
 
         // Rollback to second-last step, and get option values (p1) at
         // this point
+/* We can modify the two next lines to acces options values at T-1 and then, use theses values
+   in black sholes from t-1 to maturity to get the tree of values of the actions at maturity.
+   Then we can replace the old values by the new values obtained using Black Sholes and
+   finally rollback the tree. */
+
         option.rollback(grid[1]);
         Array va(option.values());
         QL_ENSURE(va.size() == 2, "Expect 2 nodes in grid at first step");
