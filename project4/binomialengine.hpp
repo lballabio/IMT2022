@@ -36,6 +36,11 @@
 #include <ql/termstructures/yield/flatforward.hpp>
 #include <ql/termstructures/volatility/equityfx/blackconstantvol.hpp>
 
+#include <ql/pricingengines/blackcalculator.hpp>
+
+#include <iostream>
+using namespace std;
+
 namespace QuantLib {
 
     //! Pricing engine for vanilla options using binomial trees
@@ -106,6 +111,7 @@ namespace QuantLib {
         QL_REQUIRE(payoff, "non-plain payoff given");
 
         Time maturity = rfdc.yearFraction(referenceDate, maturityDate);
+        Time maturityLessOneStep = maturity - maturity/timeSteps_;
 
         boost::shared_ptr<StochasticProcess1D> bs(
                          new GeneralizedBlackScholesProcess(
@@ -114,8 +120,6 @@ namespace QuantLib {
 
         TimeGrid grid(maturity, timeSteps_);
 
-/* We can modify next line with : maturity - deltaTtimestep, timeSteps -1 
-   to generate a tree with 1 less depth than the base tree */
         boost::shared_ptr<T> tree(new T(bs, maturity, timeSteps_,
                                         payoff->strike()));
 
@@ -124,7 +128,36 @@ namespace QuantLib {
 
         DiscretizedVanillaOption option(arguments_, *process_, grid);
 
-        option.initialize(lattice, maturity);
+/*  Here we initialize the tree to its one-last step. 
+    Then we compute black sholes for each node of the one-last level of the tree and replace its value. We use the underlying value contained in the lattice.
+    Finally we rollback the tree.
+*/
+        option.initialize(lattice, maturityLessOneStep);
+        std::cout << "Maturity : " << maturity << std::endl;
+        std::cout << "Maturity less one step : " << maturityLessOneStep << std::endl;
+        std::cout << "Option time : " << option.time() << std::endl;
+/* BlackCalculator(const ext::shared_ptr<StrikedTypePayoff>& payoff, Real forward, Real stdDev, Real discount = 1.0); */
+        std::cout << "Option Values before BS : " << std::endl;
+        Array toPrint2(option.values());
+        for (const auto &value: toPrint2) {
+            std::cout << value << ' ';
+        }
+        std::cout << std::endl << std::endl;
+        
+        for (int i = 0; i < option.values().size(); i++) {
+            Real underlyingValue = lattice->underlying(timeSteps_-2, i);
+            BlackCalculator bc = BlackCalculator(payoff, underlyingValue, v);
+            option.values()[i] = bc.value();
+        }
+
+        std::cout << "Option Values after Black Sholes : " << std::endl;
+        Array toPrint3(option.values());
+        for (const auto &value: toPrint3) {
+            std::cout << value << ' ';
+        }
+        std::cout << std::endl << std::endl;
+
+
 
         // Partial derivatives calculated from various points in the
         // binomial tree 
@@ -141,6 +174,7 @@ namespace QuantLib {
         Real s2u = lattice->underlying(2, 2); // up price
         Real s2m = lattice->underlying(2, 1); // middle price
         Real s2d = lattice->underlying(2, 0); // down (low) price
+        std::cout << s2u << ' ' << s2m << ' ' << s2d << std::endl;
 
         // calculate gamma by taking the first derivate of the two deltas
         Real delta2u = (p2u - p2m)/(s2u-s2m);
@@ -149,10 +183,6 @@ namespace QuantLib {
 
         // Rollback to second-last step, and get option values (p1) at
         // this point
-/* We can modify the two next lines to acces options values at T-1 and then, use theses values
-   in black sholes from t-1 to maturity to get the tree of values of the actions at maturity.
-   Then we can replace the old values by the new values obtained using Black Sholes and
-   finally rollback the tree. */
 
         option.rollback(grid[1]);
         Array va(option.values());
