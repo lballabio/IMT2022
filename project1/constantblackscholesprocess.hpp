@@ -24,6 +24,10 @@ namespace QuantLib {
         double getDividend();
         double getVolatility();
 
+        Real x0() const;
+        Real drift(Time t, Real x) const;
+        Real diffusion(Time t, Real x) const;
+        Real apply(Real x0, Real dx) const;
         
     };
 

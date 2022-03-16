@@ -43,3 +43,20 @@ constantblackscholesprocess::getDividend() {
 constantblackscholesprocess::getVolatility() {
     return volatility;
 }
+
+Real GeneralizedBlackScholesProcess::x0() const {
+    return x0_->value();
+}
+
+constantblackscholesprocess::drift(Time t, Real x) const {
+    return this->getRf_rate() - this->getDividend() -0.5*getVolatility()*getVolatility();
+}
+
+constantblackscholesprocess::diffusion(Time t, Real x) const {
+    return this->getVolatility();
+}
+
+constantblackscholesprocess::apply(Real x0, Real dx) const {
+    return this -> x0 * std::exp(dx);
+}
+
