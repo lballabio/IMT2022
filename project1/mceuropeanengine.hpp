@@ -31,6 +31,8 @@
 #include <ql/termstructures/volatility/equityfx/blackconstantvol.hpp>
 #include <ql/termstructures/volatility/equityfx/blackvariancecurve.hpp>
 
+#include "constantblackscholesprocess.hpp"
+
 namespace QuantLib {
 
     //! European option pricing engine using Monte Carlo simulation
@@ -76,7 +78,7 @@ namespace QuantLib {
             TimeGrid grid = this->timeGrid();
             Time time = grid.back();
             typename RNG::rsg_type generator =
-                    RNG::make_sequence_generator(dimensions * (grid.size() - 1), seed_);
+                    RNG::make_sequence_generator(dimensions * (grid.size() - 1), MCVanillaEngine<SingleVariate,RNG,S>::seed_);
             if (_constantParameters) {
                 ext::shared_ptr < GeneralizedBlackScholesProcess >
                 //blackSC_process()->ext::dynamic_pointer_cast<GeneralizedBlackScholesProcess>(this->process_);
@@ -84,7 +86,8 @@ namespace QuantLib {
                         boost::dynamic_pointer_cast<GeneralizedBlackScholesProcess>(
                                 this->process_);
 
-                double strike = MCEuropeanEngine_2<RNG, S>::arguments._payoff->strike;    // stike pas sur sur
+                //double strike = MCEuropeanEngine_2<RNG, S>::arguments._payoff->strike;    // stike pas sur sur
+                double strike = boost::dynamic_pointer_cast<StrikedtypedPayoff>(
                 double strike = boost::dynamic_pointer_cast<StrikedtypedPayoff>(
                         MCEuropeanEngine_2<RNG, S>::->arguments_.payoff);
 
@@ -96,11 +99,11 @@ namespace QuantLib {
                 ext::shared_ptr <constantblackscholesprocess> const_blackSC_process(
                         new constantblackscholesprocess(spot, const_rf, const_div, const_volatility_));
                 return path_generator_type(const_blackSC_process, grid,
-                                           generator, brownianBridge_));
+                                           generator, MCVanillaEngine<SingleVariate,RNG,S>::brownianBridge_));
             } else {
                 return ext::shared_ptr<path_generator_type>(
                         new path_generator_type(process_, grid,
-                                                generator, brownianBridge_));
+                                                generator, MCVanillaEngine<SingleVariate,RNG,S>::brownianBridge_));
             }
         }
 
@@ -328,4 +331,4 @@ namespace QuantLib {
 }
 
 
-#endif
+#endif //montecarlo_european_engine_hpp
