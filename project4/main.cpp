@@ -47,28 +47,24 @@ int main() {
 
         // options
         VanillaOption americanOption(payoff, americanExercise);
+        int i = 400;
+        Size timeSteps = i;
+        ext::shared_ptr<PricingEngine> fixedEngine(new BinomialVanillaEngine_2<JarrowRudd>(bsmProcess,timeSteps));
+        
+        americanOption.setPricingEngine(fixedEngine);
 
-        for (int i = 100; i < 101; i++) {
-            Size timeSteps = i;
-            ext::shared_ptr<PricingEngine> engine(
-                    new BinomialVanillaEngine_2<JarrowRudd>(bsmProcess,timeSteps));
-            americanOption.setPricingEngine(engine);
+        auto startTime = std::chrono::steady_clock::now();
 
-            auto startTime = std::chrono::steady_clock::now();
+        Real NPV = americanOption.NPV();
 
-            Real NPV = americanOption.NPV();
+        auto endTime = std::chrono::steady_clock::now();
 
-            auto endTime = std::chrono::steady_clock::now();
+        double us = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
 
-            double us = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+        std::cout << "Elapsed time: " << us / 1000000 << " s" << std::endl;
+        std::cout << "   ---   " << std::endl;
+        std::cout << "Step : " << i << " ; NPV : " << NPV << std::endl;
 
-            // std::cout << "i: " << i << std::endl;
-            // std::cout << "NPV: " << NPV << std::endl;
-            // std::cout << "Elapsed time: " << us / 1000000 << " s" << std::endl;
-            // std::cout << "   ---   " << std::endl;
-            std::cout << NPV << std::endl;
-
-        }
         return 0;
 
     } catch (std::exception& e) {
