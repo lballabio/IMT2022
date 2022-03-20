@@ -80,26 +80,26 @@ namespace QuantLib {
             typename RNG::rsg_type generator =
                     RNG::make_sequence_generator(dimensions * (grid.size() - 1), MCVanillaEngine<SingleVariate,RNG,S>::seed_);
             if (_constantParameters) {
-                ext::shared_ptr < GeneralizedBlackScholesProcess >
+                //ext::shared_ptr < GeneralizedBlackScholesProcess >
                 //blackSC_process()->ext::dynamic_pointer_cast<GeneralizedBlackScholesProcess>(this->process_);
                 boost::shared_ptr < GeneralizedBlackScholesProcess > blackSC_process =
                         boost::dynamic_pointer_cast<GeneralizedBlackScholesProcess>(
                                 this->process_);
 
-                //double strike = MCEuropeanEngine_2<RNG, S>::arguments._payoff->strike;    // stike pas sur sur
-                double strike = boost::dynamic_pointer_cast<StrikedtypedPayoff>(
-                double strike = boost::dynamic_pointer_cast<StrikedtypedPayoff>(
-                        MCEuropeanEngine_2<RNG, S>::->arguments_.payoff);
+                //double strike = MCEuropeanEngine_2<RNG, S>::arguments._payoff->strike;    // strike pas sur sur
+               // double strike = boost::dynamic_pointer_cast<StrikedtypedPayoff>(
+                double strike = boost::dynamic_pointer_cast<StrikedTypePayoff>(
+                        MCEuropeanEngine_2<RNG, S>::arguments_.payoff);
 
                 double const_div = blackSC_process->dividendYield()->zeroRate(time, Continuous, NoFrequency);
                 double const_rf = blackSC_process->riskFreeRate()->zeroRate(time, Continuous, NoFrequency);
                 double const_volatility_ = blackSC_process->blackVolatility()->blackVol(time, strike);
                 double spot = blackSC_process -> x0();
 
-                ext::shared_ptr <constantblackscholesprocess> const_blackSC_process(
-                        new constantblackscholesprocess(spot, const_rf, const_div, const_volatility_));
+                //constantblackscholesprocess* const_blackSC_process = new constantblackscholesprocess(spot, const_rf, const_div, const_volatility_);
+                ext::shared_ptr <constantblackscholesprocess> const_blackSC_process(new constantblackscholesprocess(spot, const_rf, const_div, const_volatility_));
                 return path_generator_type(const_blackSC_process, grid,
-                                           generator, MCVanillaEngine<SingleVariate,RNG,S>::brownianBridge_));
+                                           generator, MCVanillaEngine<SingleVariate,RNG,S>::brownianBridge_);
             } else {
                 return ext::shared_ptr<path_generator_type>(
                         new path_generator_type(process_, grid,

@@ -25,35 +25,35 @@ constantblackscholesprocess::~constantblackscholesprocess() {
 
 }
 
-double constantblackscholesprocess::getSpot() {
+double constantblackscholesprocess::getSpot() const {
     return spot;
 }
 
-double constantblackscholesprocess::getRf_rate() {
+double constantblackscholesprocess::getRf_rate() const {
     return rf_rate;
 }
 
-double constantblackscholesprocess::getDividend() {
+double constantblackscholesprocess::getDividend() const {
     return dividend;
 }
 
-double constantblackscholesprocess::getVolatility() {
+double constantblackscholesprocess::getVolatility() const{
     return volatility;
 }
 
-double constantblackscholesprocess::x0() {
+Real constantblackscholesprocess::x0() const {
     return getSpot();
 }
 
-double constantblackscholesprocess::drift(Time t, Real x) {
+Real constantblackscholesprocess::drift(Time t, Real x) const {
     return this->getRf_rate() - this->getDividend() -0.5*getVolatility()*getVolatility();
 }
 
-double constantblackscholesprocess::diffusion(Time t, Real x) {
+Real constantblackscholesprocess::diffusion(Time t, Real x) const {
     return this->getVolatility();
 }
 
-double constantblackscholesprocess::apply(Real x0, Real dx) {
+Real constantblackscholesprocess::apply(Real x0, Real dx) const{
     return x0 * std::exp(dx);
 }
 
