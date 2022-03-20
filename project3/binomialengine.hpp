@@ -124,13 +124,18 @@ namespace QuantLib {
 
         option.initialize(lattice, maturity);
 
+        // =====================================================
+        // ==================== OLD VERSION ====================
+        // =====================================================
+
+
         // Partial derivatives calculated from various points in the
         // binomial tree 
         // (see J.C.Hull, "Options, Futures and other derivatives", 6th edition, pp 397/398)
 
         // Rollback to third-last step, and get underlying prices (s2) &
         // option values (p2) at this point
-        option.rollback(grid[2]);
+        /* option.rollback(grid[2]);
         Array va2(option.values());
         QL_ENSURE(va2.size() == 3, "Expect 3 nodes in grid at second step");
         Real p2u = va2[2]; // up
@@ -168,7 +173,50 @@ namespace QuantLib {
         results_.theta = blackScholesTheta(process_,
                                            results_.value,
                                            results_.delta,
+                                           results_.gamma);*/
+
+        // =====================================================
+        // ==================== NEW VERSION ====================
+        // =====================================================
+        // ( by reusing the previous rollback code in step 3 )
+
+        // Partial derivatives calculated from various points in the binomial tree 
+        // by having 3 points at time t = 0
+
+        option.rollback(0.0);
+        Array va(option.values());
+        QL_ENSURE(va.size() == 3, "Expect 3 nodes in grid at time t=0");
+        Real p0u = va[2]; // up
+        Real p0m = va[1]; // mid
+        Real p0d = va[0]; // down (low)
+        Real s0u = lattice->underlying(0, 2); // up price
+        Real s0m = lattice->underlying(0, 1); // middle price
+        Real s0d = lattice->underlying(0, 0); // down (low) price
+
+        // calculate delta
+        Real delta = (p0u - p0d) / (s0u - s0d);
+        // calculate gamma by taking the first derivate of the two deltas
+        Real delta0u = (p0u - p0m)/(s0u-s0m);
+        Real delta0d = (p0m-p0d)/(s0m-s0d);
+        Real gamma = (delta0u - delta0d) / ((s0u-s0d)/2);
+
+
+
+        // Store results
+        results_.value = p0m;
+        results_.delta = delta;
+        results_.gamma = gamma;
+        results_.theta = blackScholesTheta(process_,
+                                           results_.value,
+                                           results_.delta,
                                            results_.gamma);
+
+
+
+
+
+
+    
     }
 
 }
