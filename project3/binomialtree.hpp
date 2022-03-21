@@ -74,7 +74,7 @@ namespace QuantLib {
             // exploiting the forward value tree centering
 
             // new one
-            BigInteger j = 2*BigInteger(index- 1) - BigInteger(i);
+            BigInteger j = 2*(BigInteger(index)-1) - BigInteger(i);
             return this->x0_*std::exp(i*this->driftPerStep_ + j*this->up_);
         }
         Real probability(Size, Size, Size) const { return 0.5; }
@@ -99,7 +99,7 @@ namespace QuantLib {
             // exploiting the forward value tree centering
 
             // new one
-            BigInteger j = 2*BigInteger(index- 1) - BigInteger(i);
+            BigInteger j = 2*(BigInteger(index)-1) - BigInteger(i);
             return this->x0_*std::exp(j*this->dx_);
         }
         Real probability(Size, Size, Size branch) const {
@@ -170,8 +170,8 @@ namespace QuantLib {
             /* return x0_ * std::pow(down_, Real(BigInteger(i)-BigInteger(index)))
                        * std::pow(up_, Real(index));*/
             // new one
-            return x0_ * std::pow(down_, Real(BigInteger(i)-BigInteger(index-1)))
-                       * std::pow(up_, Real(index-1));
+            return x0_ * std::pow(down_, Real(BigInteger(i)-BigInteger(index))-1)
+                       * std::pow(up_, Real(index)-1);
 
         };
         Real probability(Size, Size, Size branch) const {
@@ -194,8 +194,8 @@ namespace QuantLib {
             /* return x0_ * std::pow(down_, Real(BigInteger(i)-BigInteger(index)))
                        * std::pow(up_, Real(index));*/
             // new one
-            return x0_ * std::pow(down_, Real(BigInteger(i)-BigInteger(index-1)))
-                       * std::pow(up_, Real(index-1));
+            return x0_ * std::pow(down_, Real(BigInteger(i)-BigInteger(index))-1)
+                       * std::pow(up_, Real(index)-1);
         }
         Real probability(Size, Size, Size branch) const {
             return (branch == 1 ? pu_ : pd_);
@@ -216,8 +216,8 @@ namespace QuantLib {
             /* return x0_ * std::pow(down_, Real(BigInteger(i)-BigInteger(index)))
                        * std::pow(up_, Real(index));*/
             // new one
-            return x0_ * std::pow(down_, Real(BigInteger(i)-BigInteger(index-1)))
-                       * std::pow(up_, Real(index-1));
+            return x0_ * std::pow(down_, Real(BigInteger(i)-BigInteger(index))-1)
+                       * std::pow(up_, Real(index)-1);
         }
         Real probability(Size, Size, Size branch) const {
             return (branch == 1 ? pu_ : pd_);
