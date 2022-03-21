@@ -170,7 +170,7 @@ namespace QuantLib {
             /* return x0_ * std::pow(down_, Real(BigInteger(i)-BigInteger(index)))
                        * std::pow(up_, Real(index));*/
             // new one
-            return x0_ * std::pow(down_, Real(BigInteger(i)-BigInteger(index))-1)
+            return x0_ * std::pow(down_, Real(BigInteger(i)-(BigInteger(index)-1)))
                        * std::pow(up_, Real(index)-1);
 
         };
@@ -194,7 +194,7 @@ namespace QuantLib {
             /* return x0_ * std::pow(down_, Real(BigInteger(i)-BigInteger(index)))
                        * std::pow(up_, Real(index));*/
             // new one
-            return x0_ * std::pow(down_, Real(BigInteger(i)-BigInteger(index))-1)
+            return x0_ * std::pow(down_, Real(BigInteger(i)-(BigInteger(index)-1)))
                        * std::pow(up_, Real(index)-1);
         }
         Real probability(Size, Size, Size branch) const {
@@ -216,7 +216,7 @@ namespace QuantLib {
             /* return x0_ * std::pow(down_, Real(BigInteger(i)-BigInteger(index)))
                        * std::pow(up_, Real(index));*/
             // new one
-            return x0_ * std::pow(down_, Real(BigInteger(i)-BigInteger(index))-1)
+            return x0_ * std::pow(down_, Real(BigInteger(i)-(BigInteger(index)-1)))
                        * std::pow(up_, Real(index)-1);
         }
         Real probability(Size, Size, Size branch) const {
