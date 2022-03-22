@@ -60,7 +60,35 @@ namespace QuantLib {
              Size requiredSamples,
              Real requiredTolerance,
              Size maxSamples,
-             BigNatural seed);
+             BigNatural seed,
+             bool constantParameters);
+        
+        private :
+        
+        bool constantParameters_;
+        ext::shared_ptr<path_generator_type> pathGenerator() const override {
+        
+            Size dimensions = MCVanillaEngine<SingleVariate, RNG, S>::process_ ->factors();
+            TimeGrid grid = this -> timeGrid();
+            typename RNG::rsg_type generator = RNG::make_sequence_generator(dimensions*(grid.size()-1), MCVanillaEngine<SingleVariate,RNG,S>::seed_);
+            
+            if (constantParameters_) {
+                ext::shared_ptr<GeneralizedBlackScholesProcess> BS = ext::dynamic_pointer_cast<GeneralizedBlackScholesProcess>(this->process_);
+                Time extractionTime = grid.back();
+                double strike = ext::dynamic_pointer_cast<StrikedTypePayoff>(MCVanillaEngine<SingleVariate, RNG,S>::arguments_.payoff)->strike();
+                double riskFreeRate = BS -> riskFreeRate() -> zeroRate(extractionTime, Continuous);
+                double dividend = BS -> dividendYield() -> zeroRate(extractionTime,Continuous);
+                double volatility = BS -> blackVolatility() -> blackVol(extractionTime,strike);
+                double underlyingValue = BS -> x0();
+                
+                ext::shared_ptr<ConstantBlackScholesProcess> constBS(new ConstantBlackScholesProcess(underlyingValue,riskFreeRate,volatility, dividend));
+                return ext::shared_ptr<path_generator_type>(new path_generator_type(constBS, grid, generator, MCVanillaEngine<SingleVariate, RNG,S>::brownianBridge_));
+            }
+            
+            else {
+                return ext::shared_ptr<path_generator_type>(new path_generator_type(MCVanillaEngine<SingleVariate, RNG, S>::process_, grid, generator, MCVanillaEngine<SingleVariate, RNG,S>::brownianBridge_));
+            }
+        }
       protected:
         boost::shared_ptr<path_pricer_type> pathPricer() const;
     };
@@ -80,11 +108,12 @@ namespace QuantLib {
         MakeMCEuropeanEngine_2& withMaxSamples(Size samples);
         MakeMCEuropeanEngine_2& withSeed(BigNatural seed);
         MakeMCEuropeanEngine_2& withAntitheticVariate(bool b = true);
+        MakeMCEuropeanEngine_2& withConstantBSParameters(bool constantParameters);
         // conversion to pricing engine
         operator boost::shared_ptr<PricingEngine>() const;
       private:
         boost::shared_ptr<GeneralizedBlackScholesProcess> process_;
-        bool antithetic_;
+        bool antithetic_, constantParameters_;
         Size steps_, stepsPerYear_, samples_, maxSamples_;
         Real tolerance_;
         bool brownianBridge_;
@@ -116,7 +145,8 @@ namespace QuantLib {
              Size requiredSamples,
              Real requiredTolerance,
              Size maxSamples,
-             BigNatural seed)
+             BigNatural seed,
+             bool constantParameters)
     : MCVanillaEngine<SingleVariate,RNG,S>(process,
                                            timeSteps,
                                            timeStepsPerYear,
@@ -159,7 +189,7 @@ namespace QuantLib {
     : process_(process), antithetic_(false),
       steps_(Null<Size>()), stepsPerYear_(Null<Size>()),
       samples_(Null<Size>()), maxSamples_(Null<Size>()),
-      tolerance_(Null<Real>()), brownianBridge_(false), seed_(0) {}
+      tolerance_(Null<Real>()), brownianBridge_(false), seed_(0), constantParameters_(false) {}
 
     template <class RNG, class S>
     inline MakeMCEuropeanEngine_2<RNG,S>&
@@ -225,6 +255,13 @@ namespace QuantLib {
     }
 
     template <class RNG, class S>
+    inline MakeMCEuropeanEngine_2<RNG,S>&
+    MakeMCEuropeanEngine_2<RNG,S>::withConstantBSParameters(bool constantParameters) {
+        constantParameters_ = constantParameters;
+        return *this;
+    }
+
+    template <class RNG, class S>
     inline
     MakeMCEuropeanEngine_2<RNG,S>::operator boost::shared_ptr<PricingEngine>()
                                                                       const {
@@ -240,7 +277,8 @@ namespace QuantLib {
                                       antithetic_,
                                       samples_, tolerance_,
                                       maxSamples_,
-                                      seed_));
+                                      seed_,
+                                      constantParameters_));
     }
 
 

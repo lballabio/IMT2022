@@ -32,7 +32,14 @@ int main() {
         Real underlying = 36;
         Real strike = 40;
         Date maturity(24, May, 2022);
-
+        
+        std::cout << "-------------------------------" << std::endl;
+        std::cout << "Date: " << today << std::endl;
+        std::cout << "Underlying: " << underlying << std::endl;
+        std::cout << "Strike: " << strike << std::endl;
+        std::cout << "Maturity: " << maturity << std::endl;
+        std::cout << "-------------------------------" << std::endl;
+        
         ext::shared_ptr<Exercise> europeanExercise(new EuropeanExercise(maturity));
         ext::shared_ptr<StrikedTypePayoff> payoff(new PlainVanillaPayoff(type, strike));
 
@@ -54,11 +61,17 @@ int main() {
 
         Size timeSteps = 10;
         Size mcSeed = 42;
+        bool constantParameters = false;
+        std::cout << "-------------------------------" << std::endl;
+        std::cout << "Constant BS Parameters: " << constantParameters << std::endl;
+        std::cout << "-------------------------------" << std::endl;
+        
         ext::shared_ptr<PricingEngine> mcengine;
         mcengine = MakeMCEuropeanEngine_2<PseudoRandom>(bsmProcess)
             .withSteps(timeSteps)
             .withAbsoluteTolerance(0.01)
-            .withSeed(mcSeed);
+            .withSeed(mcSeed)
+            .withConstantBSParameters(constantParameters);
         europeanOption.setPricingEngine(mcengine);
 
         auto startTime = std::chrono::steady_clock::now();
@@ -69,8 +82,12 @@ int main() {
 
         double us = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
 
+        Real estimationError = europeanOption.errorEstimate();
+        
         std::cout << "NPV: " << NPV << std::endl;
+        std::cout << "Estimation of Error: " << estimationError << std::endl;
         std::cout << "Elapsed time: " << us / 1000000 << " s" << std::endl;
+        std::cout << "-------------------------------" << std::endl;
 
         return 0;
 
