@@ -54,16 +54,24 @@ int main() {
 
         Size timeSteps = 10;
         Size mcSeed = 42;
+        bool constantParameters = true;
         ext::shared_ptr<PricingEngine> mcengine;
         mcengine = MakeMCEuropeanEngine_2<PseudoRandom>(bsmProcess)
             .withSteps(timeSteps)
             .withAbsoluteTolerance(0.01)
-            .withSeed(mcSeed);
+            .withSeed(mcSeed)
+            .withConstantParameters(constantParameters);
         europeanOption.setPricingEngine(mcengine);
+
+
 
         auto startTime = std::chrono::steady_clock::now();
 
+        std::cout<< "here maybe " << std::endl;
+
         Real NPV = europeanOption.NPV();
+
+        std::cout<< "NPV " << std::endl;
 
         auto endTime = std::chrono::steady_clock::now();
 

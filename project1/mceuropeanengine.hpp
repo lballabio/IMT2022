@@ -30,7 +30,7 @@
 #include <ql/processes/blackscholesprocess.hpp>
 #include <ql/termstructures/volatility/equityfx/blackconstantvol.hpp>
 #include <ql/termstructures/volatility/equityfx/blackvariancecurve.hpp>
-
+#include <iostream>
 #include "constantblackscholesprocess.hpp"
 
 namespace QuantLib {
@@ -64,46 +64,55 @@ namespace QuantLib {
                 Real requiredTolerance,
                 Size maxSamples,
                 BigNatural seed,
-                bool constantParameters) { _constantParameters = constantParameters; };
+                bool constantParameters);
+
         bool _constantParameters;
     protected:
 
         // New path Generator
         // McSimulation implementation
-        TimeGrid timeGrid() const override;
+        //  TimeGrid timeGrid() const override;
 
         ext::shared_ptr <path_generator_type> pathGenerator() const override {
 
             Size dimensions = MCEuropeanEngine_2<RNG, S>::process_->factors();
             TimeGrid grid = this->timeGrid();
-            Time time = grid.back();
             typename RNG::rsg_type generator =
-                    RNG::make_sequence_generator(dimensions * (grid.size() - 1), MCVanillaEngine<SingleVariate,RNG,S>::seed_);
+                    RNG::make_sequence_generator(dimensions * (grid.size() - 1),
+                                                 MCVanillaEngine<SingleVariate, RNG, S>::seed_);
             if (_constantParameters) {
-                //ext::shared_ptr < GeneralizedBlackScholesProcess >
-                //blackSC_process()->ext::dynamic_pointer_cast<GeneralizedBlackScholesProcess>(this->process_);
-                boost::shared_ptr < GeneralizedBlackScholesProcess > blackSC_process =
-                        boost::dynamic_pointer_cast<GeneralizedBlackScholesProcess>(
+                ext::shared_ptr <GeneralizedBlackScholesProcess> blackSC_process =
+                        ext::dynamic_pointer_cast<GeneralizedBlackScholesProcess>(
                                 this->process_);
-
-                //double strike = MCEuropeanEngine_2<RNG, S>::arguments._payoff->strike;    // strike pas sur sur
-               // double strike = boost::dynamic_pointer_cast<StrikedtypedPayoff>(
-                double strike = boost::dynamic_pointer_cast<StrikedTypePayoff>(
-                        MCEuropeanEngine_2<RNG, S>::arguments_.payoff);
+                Time time = grid.back();
+                double strike = ext::dynamic_pointer_cast<StrikedTypePayoff>(
+                        MCEuropeanEngine_2<RNG, S>::arguments_.payoff)->strike();
 
                 double const_div = blackSC_process->dividendYield()->zeroRate(time, Continuous, NoFrequency);
                 double const_rf = blackSC_process->riskFreeRate()->zeroRate(time, Continuous, NoFrequency);
                 double const_volatility_ = blackSC_process->blackVolatility()->blackVol(time, strike);
-                double spot = blackSC_process -> x0();
+                double spot = blackSC_process->x0();
+
+                std::cout << "const div " << const_div << std::endl;
+                std::cout << "const rf " << const_rf << std::endl;
+                std::cout << "volatility " << const_volatility_ << std::endl;
+                std::cout << "spot " << spot << std::endl;
+
 
                 //constantblackscholesprocess* const_blackSC_process = new constantblackscholesprocess(spot, const_rf, const_div, const_volatility_);
-                ext::shared_ptr <constantblackscholesprocess> const_blackSC_process(new constantblackscholesprocess(spot, const_rf, const_div, const_volatility_));
-                return path_generator_type(const_blackSC_process, grid,
-                                           generator, MCVanillaEngine<SingleVariate,RNG,S>::brownianBridge_);
+                ext::shared_ptr <constantblackscholesprocess> const_blackSC_process(
+                        new constantblackscholesprocess(spot, const_rf, const_div, const_volatility_));
+                std::cout << "dans les else" << std::endl;
+
+                return ext::shared_ptr<path_generator_type>(new path_generator_type(const_blackSC_process, grid,
+                                                                                    generator,
+                                                                                    MCVanillaEngine<SingleVariate, RNG, S>::brownianBridge_));
             } else {
+                std::cout << "dans les else" << std::endl;
+                //ext::shared_ptr<GeneralizedBlackScholesProcess> process_;  // pas sur
                 return ext::shared_ptr<path_generator_type>(
-                        new path_generator_type(process_, grid,
-                                                generator, MCVanillaEngine<SingleVariate,RNG,S>::brownianBridge_));
+                        new path_generator_type(MCVanillaEngine<SingleVariate, RNG, S>::process_, grid,
+                                                generator, MCVanillaEngine<SingleVariate, RNG, S>::brownianBridge_));
             }
         }
 
@@ -136,7 +145,8 @@ namespace QuantLib {
 
         MakeMCEuropeanEngine_2 &withAntitheticVariate(bool b = true);
 
-        MakeMCEuropeanEngine_2& withConstantParameters(bool constantParameters);
+        MakeMCEuropeanEngine_2 &withConstantParameters(bool constantParameters);
+
         // conversion to pricing engine
         operator boost::shared_ptr<PricingEngine>() const;
 
@@ -189,7 +199,7 @@ namespace QuantLib {
                                                      requiredSamples,
                                                      requiredTolerance,
                                                      maxSamples,
-                                                     seed) {_constantParameters = constantParameters;}
+                                                     seed) { _constantParameters = constantParameters; }
 
 
     template<class RNG, class S>
@@ -222,7 +232,7 @@ namespace QuantLib {
             : process_(process), antithetic_(false),
               steps_(Null<Size>()), stepsPerYear_(Null<Size>()),
               samples_(Null<Size>()), maxSamples_(Null<Size>()),
-              tolerance_(Null<Real>()), brownianBridge_(false), seed_(0) {_constantParameters = true;}
+              tolerance_(Null<Real>()), brownianBridge_(false), seed_(0) { _constantParameters = true; }
 
     template<class RNG, class S>
     inline MakeMCEuropeanEngine_2<RNG, S> &
@@ -302,16 +312,15 @@ namespace QuantLib {
                    "number of steps not given");
         QL_REQUIRE(steps_ == Null<Size>() || stepsPerYear_ == Null<Size>(),
                    "number of steps overspecified");
-        return boost::shared_ptr<PricingEngine>(new
-                                                        MCEuropeanEngine_2<RNG, S>(process_,
-                                                                                   steps_,
-                                                                                   stepsPerYear_,
-                                                                                   brownianBridge_,
-                                                                                   antithetic_,
-                                                                                   samples_, tolerance_,
-                                                                                   maxSamples_,
-                                                                                   seed_,
-                                                                                   _constantParameters));
+        return boost::shared_ptr<PricingEngine>(new MCEuropeanEngine_2<RNG, S>(process_,
+                                                                               steps_,
+                                                                               stepsPerYear_,
+                                                                               brownianBridge_,
+                                                                               antithetic_,
+                                                                               samples_, tolerance_,
+                                                                               maxSamples_,
+                                                                               seed_,
+                                                                               _constantParameters));
     }
 
 
