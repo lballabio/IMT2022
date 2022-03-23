@@ -49,13 +49,21 @@ int main() {
         ext::shared_ptr<BlackScholesProcess> bsmProcess(
                  new BlackScholesProcess(underlyingH, riskFreeRate, volatility));
 
+                
+        // Cst B&S process with constant parameters
+        float riskFreeRateCST = 0.015;
+        float volatilityCST = 0.25;
+        ext::shared_ptr<ConstantBlackScholesProcess> cstbsmProcess(
+                 new ConstantBlackScholesProcess(underlyingH, riskFreeRate, volatility));
+
         // options
         VanillaOption europeanOption(payoff, europeanExercise);
 
         Size timeSteps = 10;
         Size mcSeed = 42;
         ext::shared_ptr<PricingEngine> mcengine;
-        mcengine = MakeMCEuropeanEngine_2<PseudoRandom>(bsmProcess)
+        bool const_bsm = false;
+        mcengine = MakeMCEuropeanEngine_2<PseudoRandom>(bsmProcess, const_bsm)
             .withSteps(timeSteps)
             .withAbsoluteTolerance(0.01)
             .withSeed(mcSeed);

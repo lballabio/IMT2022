@@ -30,6 +30,7 @@
 #include <ql/processes/blackscholesprocess.hpp>
 #include <ql/termstructures/volatility/equityfx/blackconstantvol.hpp>
 #include <ql/termstructures/volatility/equityfx/blackvariancecurve.hpp>
+#include <iostream>
 
 namespace QuantLib {
 
@@ -70,7 +71,7 @@ namespace QuantLib {
     class MakeMCEuropeanEngine_2 {
       public:
         MakeMCEuropeanEngine_2(
-                    const boost::shared_ptr<GeneralizedBlackScholesProcess>&);
+                    const boost::shared_ptr<GeneralizedBlackScholesProcess>&, bool isConstant);
         // named parameters
         MakeMCEuropeanEngine_2& withSteps(Size steps);
         MakeMCEuropeanEngine_2& withStepsPerYear(Size steps);
@@ -155,11 +156,13 @@ namespace QuantLib {
 
     template <class RNG, class S>
     inline MakeMCEuropeanEngine_2<RNG,S>::MakeMCEuropeanEngine_2(
-             const boost::shared_ptr<GeneralizedBlackScholesProcess>& process)
+             const boost::shared_ptr<GeneralizedBlackScholesProcess>& process, bool isConstant)
     : process_(process), antithetic_(false),
       steps_(Null<Size>()), stepsPerYear_(Null<Size>()),
       samples_(Null<Size>()), maxSamples_(Null<Size>()),
-      tolerance_(Null<Real>()), brownianBridge_(false), seed_(0) {}
+      tolerance_(Null<Real>()), brownianBridge_(false), seed_(0) {
+
+      }
 
     template <class RNG, class S>
     inline MakeMCEuropeanEngine_2<RNG,S>&
