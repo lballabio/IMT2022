@@ -23,3 +23,8 @@ to GitHub is at <https://guides.github.com/activities/hello-world/>.
 
 Good luck!
 
+Next steps : Add constant parameters to the BS process, don't recreate a class. So the constantBS is basically a normal BS but with constant parameters
+
+Hint: in the MCEuropeanEngine class, you will have to override the pathGenerator method
+inherited from the parent class MCVanillaEngine.
+
