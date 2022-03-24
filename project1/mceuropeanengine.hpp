@@ -66,7 +66,24 @@ namespace QuantLib {
 
         bool constantParameters;
 
-        ext::shared_ptr<path_generator_type> pathGenerator() const override {}
+        ext::shared_ptr<path_generator_type> pathGenerator() const override
+        {
+            Size dimensions = MCVanillaEngine<SingleVariate,RNG,S>::process_->factors();
+            TimeGrid grid = this->timeGrid();
+            typename RNG::rsg_type generator = RNG::make_sequence_generator(dimensions*(grid.size()-1),MCVanillaEngine<SingleVariate,RNG,S>::seed_);
+
+            if(this->constantParameters)
+            {
+                std::cout << "Cst parameters" <<std::endl;
+                return ext::shared_ptr<path_generator_type>(new path_generator_type(MCVanillaEngine<SingleVariate, RNG, S>::process_, grid, generator, MCVanillaEngine<SingleVariate, RNG, S>::brownianBridge_));
+            }
+            else
+            {
+                std::cout << "Non Cst parameters" <<std::endl;
+                return ext::shared_ptr<path_generator_type>(new path_generator_type(MCVanillaEngine<SingleVariate, RNG, S>::process_, grid, generator, MCVanillaEngine<SingleVariate, RNG, S>::brownianBridge_));
+            }
+        }
+
       protected:
         boost::shared_ptr<path_pricer_type> pathPricer() const;
     };
@@ -140,28 +157,6 @@ namespace QuantLib {
                                                this->constantParameters = constantParameters;
                                            }
 
-
-    template <class RNG, class S>
-    inline
-    MCEuropeanEngine_2<RNG,S>::pathGenerator()
-    {
-        Size dimensions = MCVanillaEngine<SingleVariate,RNG,S>::process_->factors();
-        TimeGrid grid = this->timeGrid();
-        typename RNG::rsg_type generator =
-        RNG::make_sequence_generator(dimensions*(grid.size()-1),MCVanillaEngine<SingleVariate,RNG,S>::seed_);
-
-        if(this->constantParameters)
-        {
-            std:cout << "Cst parameters"
-            return ext::shared_ptr<path_generator_type>(new path_generator_type(MCVanillaEngine<SingleVariate, RNG, S>::process_, grid, generator, MCVanillaEngine<SingleVariate, RNG, S>::brownianBridge_))
-        }
-        else
-        {
-            return ext::shared_ptr<path_generator_type>(new path_generator_type(MCVanillaEngine<SingleVariate, RNG, S>::process_, grid, generator, MCVanillaEngine<SingleVariate, RNG, S>::brownianBridge_))
-        }
-    }
-
-
     template <class RNG, class S>
     inline
     boost::shared_ptr<typename MCEuropeanEngine_2<RNG,S>::path_pricer_type>
@@ -213,7 +208,7 @@ namespace QuantLib {
     template <class RNG, class S>
     inline MakeMCEuropeanEngine_2<RNG,S>&
     MakeMCEuropeanEngine_2<RNG,S>::withConstantParameters(bool constantParameters) {
-        this->constantParameters = constantParameters
+        this->constantParameters = constantParameters;
         return *this;
     }
 
@@ -282,7 +277,8 @@ namespace QuantLib {
                                       antithetic_,
                                       samples_, tolerance_,
                                       maxSamples_,
-                                      seed_));
+                                      seed_,
+                                      constantParameters));
     }
 
 
