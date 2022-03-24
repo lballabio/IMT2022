@@ -74,12 +74,20 @@ namespace QuantLib {
 
             if(this->constantParameters)
             {
-                std::cout << "Cst parameters" <<std::endl;
-                return ext::shared_ptr<path_generator_type>(new path_generator_type(MCVanillaEngine<SingleVariate, RNG, S>::process_, grid, generator, MCVanillaEngine<SingleVariate, RNG, S>::brownianBridge_));
+                ext::shared_ptr<GeneralizedBlackScholesProcess> bs_process = ext::dynamic_pointer_cast<GeneralizedBlackScholesProcess>(this->process_);
+                Time sampling_time = grid.back(); // Get the reference to the last element in the vector timeGrid (so the latest moment)
+                float strike = ext::dynamic_pointer_cast<StrikedTypePayoff>(MCVanillaEngine<SingleVariate, RNG, S>::arguments_.payoff)->strike();
+                float risk_free_rate = bs_process->riskFreeRate()->zeroRate(sampling_time, Continuous);
+                float dividends = bs_process->dividendYield()->zeroRate(sampling_time, Continuous);
+                float volatility = bs_process->blackVolatility()->blackVol(sampling_time, strike);
+                float underlying_value = bs_process->x0();
+
+                ext::shared_ptr<ConstantBlackScholesProcess> cst_bs_process(new ConstantBlackScholesProcess(underlying_value, risk_free_rate, volatility, dividends));
+
+                return ext::shared_ptr<path_generator_type>(new path_generator_type(cst_bs_process, grid, generator, MCVanillaEngine<SingleVariate, RNG, S>::brownianBridge_));
             }
             else
             {
-                std::cout << "Non Cst parameters" <<std::endl;
                 return ext::shared_ptr<path_generator_type>(new path_generator_type(MCVanillaEngine<SingleVariate, RNG, S>::process_, grid, generator, MCVanillaEngine<SingleVariate, RNG, S>::brownianBridge_));
             }
         }

@@ -6,6 +6,7 @@
 #include "constantblackscholesprocess.hpp"
 #include "mceuropeanengine.hpp"
 #include <ql/instruments/vanillaoption.hpp>
+#include <ql/instruments/asianoption.hpp>
 #include <ql/instruments/payoffs.hpp>
 #include <ql/exercise.hpp>
 #include <ql/pricingengines/vanilla/mceuropeanengine.hpp>
@@ -49,14 +50,6 @@ int main() {
         ext::shared_ptr<BlackScholesProcess> bsmProcess(
                  new BlackScholesProcess(underlyingH, riskFreeRate, volatility));
 
-                
-        // Cst B&S process with constant parameters
-        float riskFreeRateCST = 0.015;
-        float volatilityCST = 0.25;
-        float underlyingCST = 36;
-        float dividends = 0.015;
-        ext::shared_ptr<ConstantBlackScholesProcess> cstbsmProcess(
-                 new ConstantBlackScholesProcess(underlyingCST, riskFreeRateCST, volatilityCST, dividends));
 
 
         // options
@@ -64,12 +57,14 @@ int main() {
 
         Size timeSteps = 10;
         Size mcSeed = 42;
+        std::cout << "Calculation with non constant parameters" << std::endl;
         ext::shared_ptr<PricingEngine> mcengine;
         bool const_bsm = false;
         mcengine = MakeMCEuropeanEngine_2<PseudoRandom>(bsmProcess, const_bsm)
             .withSteps(timeSteps)
             .withAbsoluteTolerance(0.01)
-            .withSeed(mcSeed);
+            .withSeed(mcSeed)
+            .withConstantParameters(const_bsm);
         europeanOption.setPricingEngine(mcengine);
 
         auto startTime = std::chrono::steady_clock::now();
@@ -82,6 +77,34 @@ int main() {
 
         std::cout << "NPV: " << NPV << std::endl;
         std::cout << "Elapsed time: " << us / 1000000 << " s" << std::endl;
+
+        std::cout << "Calculation with constant parameters" << std::endl;
+        ext::shared_ptr<PricingEngine> mcengine_2;
+        const_bsm = true;
+        mcengine_2 = MakeMCEuropeanEngine_2<PseudoRandom>(bsmProcess, const_bsm)
+            .withSteps(timeSteps)
+            .withAbsoluteTolerance(0.01)
+            .withSeed(mcSeed)
+            .withConstantParameters(const_bsm);
+        europeanOption.setPricingEngine(mcengine_2);
+
+        startTime = std::chrono::steady_clock::now();
+
+        NPV = europeanOption.NPV();
+
+        endTime = std::chrono::steady_clock::now();
+
+        us = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+
+        std::cout << "NPV: " << NPV << std::endl;
+        std::cout << "Elapsed time: " << us / 1000000 << " s" << std::endl;
+
+        // Do the same calculations but for an asian option
+
+        ext::shared_ptr<Exercise> europeanExercise_2(new EuropeanExercise(maturity));
+        ext::shared_ptr<StrikedTypePayoff> payoff_2(new PlainVanillaPayoff(type, strike));
+
+        DiscreteAveragingAsianOption asianOption = new DiscreteAveragingAsianOption(payoff_2, europeanExercise_2);
  
         return 0;
 
