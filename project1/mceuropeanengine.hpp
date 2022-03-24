@@ -61,7 +61,12 @@ namespace QuantLib {
              Size requiredSamples,
              Real requiredTolerance,
              Size maxSamples,
-             BigNatural seed);
+             BigNatural seed,
+             bool constantParameters);
+
+        bool constantParameters;
+
+        ext::shared_ptr<path_generator_type> pathGenerator() const override {}
       protected:
         boost::shared_ptr<path_pricer_type> pathPricer() const;
     };
@@ -81,6 +86,7 @@ namespace QuantLib {
         MakeMCEuropeanEngine_2& withMaxSamples(Size samples);
         MakeMCEuropeanEngine_2& withSeed(BigNatural seed);
         MakeMCEuropeanEngine_2& withAntitheticVariate(bool b = true);
+        MakeMCEuropeanEngine_2& withConstantParameters(bool constantParameters = false);
         // conversion to pricing engine
         operator boost::shared_ptr<PricingEngine>() const;
       private:
@@ -90,6 +96,7 @@ namespace QuantLib {
         Real tolerance_;
         bool brownianBridge_;
         BigNatural seed_;
+        bool constantParameters;
     };
 
     class EuropeanPathPricer_2 : public PathPricer<Path> {
@@ -117,7 +124,8 @@ namespace QuantLib {
              Size requiredSamples,
              Real requiredTolerance,
              Size maxSamples,
-             BigNatural seed)
+             BigNatural seed,
+             bool constantParameters)
     : MCVanillaEngine<SingleVariate,RNG,S>(process,
                                            timeSteps,
                                            timeStepsPerYear,
@@ -127,7 +135,31 @@ namespace QuantLib {
                                            requiredSamples,
                                            requiredTolerance,
                                            maxSamples,
-                                           seed) {}
+                                           seed) 
+                                           {
+                                               this->constantParameters = constantParameters;
+                                           }
+
+
+    template <class RNG, class S>
+    inline
+    MCEuropeanEngine_2<RNG,S>::pathGenerator()
+    {
+        Size dimensions = MCVanillaEngine<SingleVariate,RNG,S>::process_->factors();
+        TimeGrid grid = this->timeGrid();
+        typename RNG::rsg_type generator =
+        RNG::make_sequence_generator(dimensions*(grid.size()-1),MCVanillaEngine<SingleVariate,RNG,S>::seed_);
+
+        if(this->constantParameters)
+        {
+            std:cout << "Cst parameters"
+            return ext::shared_ptr<path_generator_type>(new path_generator_type(MCVanillaEngine<SingleVariate, RNG, S>::process_, grid, generator, MCVanillaEngine<SingleVariate, RNG, S>::brownianBridge_))
+        }
+        else
+        {
+            return ext::shared_ptr<path_generator_type>(new path_generator_type(MCVanillaEngine<SingleVariate, RNG, S>::process_, grid, generator, MCVanillaEngine<SingleVariate, RNG, S>::brownianBridge_))
+        }
+    }
 
 
     template <class RNG, class S>
@@ -160,7 +192,7 @@ namespace QuantLib {
     : process_(process), antithetic_(false),
       steps_(Null<Size>()), stepsPerYear_(Null<Size>()),
       samples_(Null<Size>()), maxSamples_(Null<Size>()),
-      tolerance_(Null<Real>()), brownianBridge_(false), seed_(0) {
+      tolerance_(Null<Real>()), brownianBridge_(false), seed_(0), constantParameters(false) {
 
       }
 
@@ -175,6 +207,13 @@ namespace QuantLib {
     inline MakeMCEuropeanEngine_2<RNG,S>&
     MakeMCEuropeanEngine_2<RNG,S>::withStepsPerYear(Size steps) {
         stepsPerYear_ = steps;
+        return *this;
+    }
+
+    template <class RNG, class S>
+    inline MakeMCEuropeanEngine_2<RNG,S>&
+    MakeMCEuropeanEngine_2<RNG,S>::withConstantParameters(bool constantParameters) {
+        this->constantParameters = constantParameters
         return *this;
     }
 

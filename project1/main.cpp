@@ -57,7 +57,7 @@ int main() {
         float dividends = 0.015;
         ext::shared_ptr<ConstantBlackScholesProcess> cstbsmProcess(
                  new ConstantBlackScholesProcess(underlyingCST, riskFreeRateCST, volatilityCST, dividends));
-/* 
+
 
         // options
         VanillaOption europeanOption(payoff, europeanExercise);
@@ -82,7 +82,7 @@ int main() {
 
         std::cout << "NPV: " << NPV << std::endl;
         std::cout << "Elapsed time: " << us / 1000000 << " s" << std::endl;
- */
+ 
         return 0;
 
     } catch (std::exception& e) {
