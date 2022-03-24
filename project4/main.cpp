@@ -47,11 +47,11 @@ int main() {
 
         // options
         VanillaOption americanOption(payoff, americanExercise);
-
-        Size timeSteps = 100;
-        ext::shared_ptr<PricingEngine> engine(
-                new BinomialVanillaEngine_2<JarrowRudd>(bsmProcess,timeSteps));
-        americanOption.setPricingEngine(engine);
+        int i = 400;
+        Size timeSteps = i;
+        ext::shared_ptr<PricingEngine> fixedEngine(new BinomialVanillaEngine_2<JarrowRudd>(bsmProcess,timeSteps));
+        
+        americanOption.setPricingEngine(fixedEngine);
 
         auto startTime = std::chrono::steady_clock::now();
 
@@ -61,8 +61,9 @@ int main() {
 
         double us = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
 
-        std::cout << "NPV: " << NPV << std::endl;
         std::cout << "Elapsed time: " << us / 1000000 << " s" << std::endl;
+        std::cout << "   ---   " << std::endl;
+        std::cout << "Step : " << i << " ; NPV : " << NPV << std::endl;
 
         return 0;
 

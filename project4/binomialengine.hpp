@@ -36,6 +36,12 @@
 #include <ql/termstructures/yield/flatforward.hpp>
 #include <ql/termstructures/volatility/equityfx/blackconstantvol.hpp>
 
+#include <ql/pricingengines/blackcalculator.hpp>
+
+#include <iostream>
+#include <cmath>
+using namespace std;
+
 namespace QuantLib {
 
     //! Pricing engine for vanilla options using binomial trees
@@ -106,6 +112,7 @@ namespace QuantLib {
         QL_REQUIRE(payoff, "non-plain payoff given");
 
         Time maturity = rfdc.yearFraction(referenceDate, maturityDate);
+        Time maturityLessOneStep = maturity - maturity/timeSteps_;
 
         boost::shared_ptr<StochasticProcess1D> bs(
                          new GeneralizedBlackScholesProcess(
@@ -122,7 +129,17 @@ namespace QuantLib {
 
         DiscretizedVanillaOption option(arguments_, *process_, grid);
 
-        option.initialize(lattice, maturity);
+/*  Here we initialize the tree to its one-last step. 
+    Then we compute Black Scholes for each node of the one-last level of the tree and replace its value. We use the underlying value contained in the lattice.
+    Finally we rollback the tree.
+*/
+        option.initialize(lattice, maturityLessOneStep);
+        Time time_to_maturity = maturity-maturityLessOneStep;
+        for (int i = 0; i < option.values().size(); i++) {
+            Real underlyingValue = lattice->underlying(timeSteps_-1, i);
+            BlackCalculator bc = BlackCalculator(payoff, underlyingValue*std::exp((r-q)*time_to_maturity), v*std::sqrt(time_to_maturity), std::exp(-r*time_to_maturity));
+            option.values()[i] = bc.value();
+        }
 
         // Partial derivatives calculated from various points in the
         // binomial tree 
@@ -147,6 +164,7 @@ namespace QuantLib {
 
         // Rollback to second-last step, and get option values (p1) at
         // this point
+
         option.rollback(grid[1]);
         Array va(option.values());
         QL_ENSURE(va.size() == 2, "Expect 2 nodes in grid at first step");
@@ -170,7 +188,6 @@ namespace QuantLib {
                                            results_.delta,
                                            results_.gamma);
     }
-
 }
 
 
