@@ -30,6 +30,8 @@
 #include <ql/processes/blackscholesprocess.hpp>
 #include <ql/termstructures/volatility/equityfx/blackconstantvol.hpp>
 #include <ql/termstructures/volatility/equityfx/blackvariancecurve.hpp>
+#include "constantblackscholesprocess.hpp"
+#include <iostream>
 
 namespace QuantLib {
 
@@ -61,27 +63,34 @@ namespace QuantLib {
              Real requiredTolerance,
              Size maxSamples,
              BigNatural seed,
-             bool constantParameters);
+             bool constantParameters); // add of a boolean which tells if parameters in BS are constant or not
         
         private :
+            bool constantParameters_;
         
-        bool constantParameters_;
         ext::shared_ptr<path_generator_type> pathGenerator() const override {
         
-            Size dimensions = MCVanillaEngine<SingleVariate, RNG, S>::process_ ->factors();
-            TimeGrid grid = this -> timeGrid();
+            Size dimensions = MCVanillaEngine<SingleVariate, RNG, S>::process_->factors();
+            TimeGrid grid = this->timeGrid();
             typename RNG::rsg_type generator = RNG::make_sequence_generator(dimensions*(grid.size()-1), MCVanillaEngine<SingleVariate,RNG,S>::seed_);
             
+            // If the parameters of the BS process are constant we call our new class ConstantBlackScholesParameters to evaluate parameters
             if (constantParameters_) {
                 ext::shared_ptr<GeneralizedBlackScholesProcess> BS = ext::dynamic_pointer_cast<GeneralizedBlackScholesProcess>(this->process_);
                 Time extractionTime = grid.back();
-                double strike = ext::dynamic_pointer_cast<StrikedTypePayoff>(MCVanillaEngine<SingleVariate, RNG,S>::arguments_.payoff)->strike();
-                double riskFreeRate = BS -> riskFreeRate() -> zeroRate(extractionTime, Continuous);
-                double dividend = BS -> dividendYield() -> zeroRate(extractionTime,Continuous);
-                double volatility = BS -> blackVolatility() -> blackVol(extractionTime,strike);
+                
                 double underlyingValue = BS -> x0();
                 
+                double strike = ext::dynamic_pointer_cast<StrikedTypePayoff>(MCVanillaEngine<SingleVariate, RNG,S>::arguments_.payoff)->strike();
+                
+                double volatility = BS->blackVolatility()->blackVol(extractionTime,strike);
+                
+                double riskFreeRate = BS->riskFreeRate()->zeroRate(extractionTime, Continuous);
+                
+                double dividend = BS->dividendYield()->zeroRate(extractionTime,Continuous);
+                
                 ext::shared_ptr<ConstantBlackScholesProcess> constBS(new ConstantBlackScholesProcess(underlyingValue,riskFreeRate,volatility, dividend));
+                
                 return ext::shared_ptr<path_generator_type>(new path_generator_type(constBS, grid, generator, MCVanillaEngine<SingleVariate, RNG,S>::brownianBridge_));
             }
             
@@ -90,7 +99,7 @@ namespace QuantLib {
             }
         }
       protected:
-        boost::shared_ptr<path_pricer_type> pathPricer() const;
+        boost::shared_ptr<path_pricer_type> pathPricer() const override;
     };
 
     //! Monte Carlo European engine factory
@@ -113,11 +122,12 @@ namespace QuantLib {
         operator boost::shared_ptr<PricingEngine>() const;
       private:
         boost::shared_ptr<GeneralizedBlackScholesProcess> process_;
-        bool antithetic_, constantParameters_;
+        bool antithetic_;
         Size steps_, stepsPerYear_, samples_, maxSamples_;
         Real tolerance_;
         bool brownianBridge_;
         BigNatural seed_;
+        bool constantParameters_;
     };
 
     class EuropeanPathPricer_2 : public PathPricer<Path> {
@@ -156,7 +166,7 @@ namespace QuantLib {
                                            requiredSamples,
                                            requiredTolerance,
                                            maxSamples,
-                                           seed) {}
+                                           seed) {constantParameters_ = constantParameters;}
 
 
     template <class RNG, class S>

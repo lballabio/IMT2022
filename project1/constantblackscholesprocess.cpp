@@ -7,28 +7,30 @@
 
 namespace QuantLib {
 
-ConstantBlackScholesProcess::ConstantBlackScholesProcess(
+    ConstantBlackScholesProcess::ConstantBlackScholesProcess(
                                         double underlyingValue,
                                         double riskFreeRate,
-                                        double volatility,
-                                        double dividend) : StochasticProcess1D(ext::make_shared<EulerDiscretization>()) {
-    underlyingValue = underlyingValue;
-    riskFreeRate = riskFreeRate;
-    volatility = volatility;
-    dividend = dividend;
-    }
+                                        double volatility_,
+                                        double dividend_) :StochasticProcess1D(ext::make_shared<EulerDiscretization>())
+    {underlying_value = underlyingValue;
+    risk_free_rate = riskFreeRate;
+    volatility = volatility_;
+    dividend = dividend_;}
+
 Real ConstantBlackScholesProcess::x0() const {
-    return underlyingValue;
+    return underlying_value;
+}
+
+Real ConstantBlackScholesProcess::drift(Time t, Real x) const {
+    return risk_free_rate - dividend - 0.5*volatility*volatility;
 }
 
 Real ConstantBlackScholesProcess::diffusion(Time t, Real x) const {
     return volatility;
 }
-Real ConstantBlackScholesProcess::drift(Time t, Real x) const {
-    return riskFreeRate - dividend - 0.5*volatility*volatility;
-}
-Real ConstantBlackScholesProcess::apply(Real s0, Real dx) const {
-    return s0*std::exp(dx);
+
+Real ConstantBlackScholesProcess::apply(Real x0, Real dx) const {
+    return x0 * std::exp(dx);
 }
 
 }
