@@ -30,6 +30,7 @@
 #include <ql/processes/blackscholesprocess.hpp>
 #include <ql/termstructures/volatility/equityfx/blackconstantvol.hpp>
 #include <ql/termstructures/volatility/equityfx/blackvariancecurve.hpp>
+#include <iostream>
 
 namespace QuantLib {
 
@@ -60,7 +61,37 @@ namespace QuantLib {
              Size requiredSamples,
              Real requiredTolerance,
              Size maxSamples,
-             BigNatural seed);
+             BigNatural seed,
+             bool constantParameters);
+
+        bool constantParameters;
+
+        ext::shared_ptr<path_generator_type> pathGenerator() const override
+        {
+            Size dimensions = MCVanillaEngine<SingleVariate,RNG,S>::process_->factors();
+            TimeGrid grid = this->timeGrid();
+            typename RNG::rsg_type generator = RNG::make_sequence_generator(dimensions*(grid.size()-1),MCVanillaEngine<SingleVariate,RNG,S>::seed_);
+
+            if(this->constantParameters)
+            {
+                ext::shared_ptr<GeneralizedBlackScholesProcess> bs_process = ext::dynamic_pointer_cast<GeneralizedBlackScholesProcess>(this->process_);
+                Time sampling_time = grid.back(); // Get the reference to the last element in the vector timeGrid (so the latest moment)
+                float strike = ext::dynamic_pointer_cast<StrikedTypePayoff>(MCVanillaEngine<SingleVariate, RNG, S>::arguments_.payoff)->strike();
+                float risk_free_rate = bs_process->riskFreeRate()->zeroRate(sampling_time, Continuous);
+                float dividends = bs_process->dividendYield()->zeroRate(sampling_time, Continuous);
+                float volatility = bs_process->blackVolatility()->blackVol(sampling_time, strike);
+                float underlying_value = bs_process->x0();
+
+                ext::shared_ptr<ConstantBlackScholesProcess> cst_bs_process(new ConstantBlackScholesProcess(underlying_value, risk_free_rate, volatility, dividends));
+
+                return ext::shared_ptr<path_generator_type>(new path_generator_type(cst_bs_process, grid, generator, MCVanillaEngine<SingleVariate, RNG, S>::brownianBridge_));
+            }
+            else
+            {
+                return ext::shared_ptr<path_generator_type>(new path_generator_type(MCVanillaEngine<SingleVariate, RNG, S>::process_, grid, generator, MCVanillaEngine<SingleVariate, RNG, S>::brownianBridge_));
+            }
+        }
+
       protected:
         boost::shared_ptr<path_pricer_type> pathPricer() const;
     };
@@ -70,7 +101,7 @@ namespace QuantLib {
     class MakeMCEuropeanEngine_2 {
       public:
         MakeMCEuropeanEngine_2(
-                    const boost::shared_ptr<GeneralizedBlackScholesProcess>&);
+                    const boost::shared_ptr<GeneralizedBlackScholesProcess>&, bool isConstant);
         // named parameters
         MakeMCEuropeanEngine_2& withSteps(Size steps);
         MakeMCEuropeanEngine_2& withStepsPerYear(Size steps);
@@ -80,6 +111,7 @@ namespace QuantLib {
         MakeMCEuropeanEngine_2& withMaxSamples(Size samples);
         MakeMCEuropeanEngine_2& withSeed(BigNatural seed);
         MakeMCEuropeanEngine_2& withAntitheticVariate(bool b = true);
+        MakeMCEuropeanEngine_2& withConstantParameters(bool constantParameters = false);
         // conversion to pricing engine
         operator boost::shared_ptr<PricingEngine>() const;
       private:
@@ -89,6 +121,7 @@ namespace QuantLib {
         Real tolerance_;
         bool brownianBridge_;
         BigNatural seed_;
+        bool constantParameters;
     };
 
     class EuropeanPathPricer_2 : public PathPricer<Path> {
@@ -116,7 +149,8 @@ namespace QuantLib {
              Size requiredSamples,
              Real requiredTolerance,
              Size maxSamples,
-             BigNatural seed)
+             BigNatural seed,
+             bool constantParameters)
     : MCVanillaEngine<SingleVariate,RNG,S>(process,
                                            timeSteps,
                                            timeStepsPerYear,
@@ -126,8 +160,10 @@ namespace QuantLib {
                                            requiredSamples,
                                            requiredTolerance,
                                            maxSamples,
-                                           seed) {}
-
+                                           seed) 
+                                           {
+                                               this->constantParameters = constantParameters;
+                                           }
 
     template <class RNG, class S>
     inline
@@ -155,11 +191,13 @@ namespace QuantLib {
 
     template <class RNG, class S>
     inline MakeMCEuropeanEngine_2<RNG,S>::MakeMCEuropeanEngine_2(
-             const boost::shared_ptr<GeneralizedBlackScholesProcess>& process)
+             const boost::shared_ptr<GeneralizedBlackScholesProcess>& process, bool isConstant)
     : process_(process), antithetic_(false),
       steps_(Null<Size>()), stepsPerYear_(Null<Size>()),
       samples_(Null<Size>()), maxSamples_(Null<Size>()),
-      tolerance_(Null<Real>()), brownianBridge_(false), seed_(0) {}
+      tolerance_(Null<Real>()), brownianBridge_(false), seed_(0), constantParameters(false) {
+
+      }
 
     template <class RNG, class S>
     inline MakeMCEuropeanEngine_2<RNG,S>&
@@ -172,6 +210,13 @@ namespace QuantLib {
     inline MakeMCEuropeanEngine_2<RNG,S>&
     MakeMCEuropeanEngine_2<RNG,S>::withStepsPerYear(Size steps) {
         stepsPerYear_ = steps;
+        return *this;
+    }
+
+    template <class RNG, class S>
+    inline MakeMCEuropeanEngine_2<RNG,S>&
+    MakeMCEuropeanEngine_2<RNG,S>::withConstantParameters(bool constantParameters) {
+        this->constantParameters = constantParameters;
         return *this;
     }
 
@@ -240,7 +285,8 @@ namespace QuantLib {
                                       antithetic_,
                                       samples_, tolerance_,
                                       maxSamples_,
-                                      seed_));
+                                      seed_,
+                                      constantParameters));
     }
 
 
