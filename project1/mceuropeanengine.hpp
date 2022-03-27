@@ -69,10 +69,6 @@ namespace QuantLib {
         bool _constantParameters;
     protected:
 
-        // New path Generator
-        // McSimulation implementation
-        //  TimeGrid timeGrid() const override;
-
         ext::shared_ptr <path_generator_type> pathGenerator() const override {
 
             Size dimensions = MCEuropeanEngine_2<RNG, S>::process_->factors();
@@ -93,22 +89,20 @@ namespace QuantLib {
                 double const_volatility_ = blackSC_process->blackVolatility()->blackVol(time, strike);
                 double spot = blackSC_process->x0();
 
-                std::cout << "const div " << const_div << std::endl;
-                std::cout << "const rf " << const_rf << std::endl;
-                std::cout << "volatility " << const_volatility_ << std::endl;
-                std::cout << "spot " << spot << std::endl;
+                std::cout << "When the constant dividend is " << const_div << std::endl;
+                std::cout << "And the constant risk free rate is " << const_rf << std::endl;
+                std::cout << "And the volatility is " << const_volatility_ << std::endl;
+                std::cout << "With a value for the spot " << spot << std::endl;
 
 
                 //constantblackscholesprocess* const_blackSC_process = new constantblackscholesprocess(spot, const_rf, const_div, const_volatility_);
                 ext::shared_ptr <constantblackscholesprocess> const_blackSC_process(
                         new constantblackscholesprocess(spot, const_rf, const_div, const_volatility_));
-                std::cout << "dans les else" << std::endl;
 
                 return ext::shared_ptr<path_generator_type>(new path_generator_type(const_blackSC_process, grid,
                                                                                     generator,
                                                                                     MCVanillaEngine<SingleVariate, RNG, S>::brownianBridge_));
             } else {
-                std::cout << "dans les else" << std::endl;
                 //ext::shared_ptr<GeneralizedBlackScholesProcess> process_;  // pas sur
                 return ext::shared_ptr<path_generator_type>(
                         new path_generator_type(MCVanillaEngine<SingleVariate, RNG, S>::process_, grid,
