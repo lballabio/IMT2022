@@ -5,10 +5,12 @@
 #endif
 #include "constantblackscholesprocess.hpp"
 #include "mceuropeanengine.hpp"
+#include "mcdiscretearithmeticapengine.hpp"
 #include <ql/instruments/vanillaoption.hpp>
 #include <ql/instruments/asianoption.hpp>
 #include <ql/instruments/payoffs.hpp>
 #include <ql/exercise.hpp>
+#include <ql/quantlib.hpp>
 #include <ql/pricingengines/vanilla/mceuropeanengine.hpp>
 #include <ql/termstructures/yield/zerocurve.hpp>
 #include <ql/termstructures/volatility/equityfx/blackvariancecurve.hpp>
@@ -101,11 +103,57 @@ int main() {
 
         // Do the same calculations but for an asian option
 
+        // Option parameters
         ext::shared_ptr<Exercise> europeanExercise_2(new EuropeanExercise(maturity));
         ext::shared_ptr<StrikedTypePayoff> payoff_2(new PlainVanillaPayoff(type, strike));
+        Average::Type averageType = Average::Arithmetic;
+        Real runningSum = 1.0;
+        Size pastFixings = 0;
+        std::vector<Date> fixingDates;
+        
+        Date incrementedDate=today+7;
+        while(incrementedDate <= maturity)
+        {
+            fixingDates.push_back(incrementedDate);
+            incrementedDate=incrementedDate+7;
+        }
 
-        DiscreteAveragingAsianOption asianOption = new DiscreteAveragingAsianOption(payoff_2, europeanExercise_2);
- 
+        DiscreteAveragingAsianOption discreteAsianOption(averageType, runningSum, pastFixings, fixingDates, payoff_2, europeanExercise_2);
+
+        discreteAsianOption.setPricingEngine(
+            boost::shared_ptr<PricingEngine>(
+            MakeMCDiscreteArithmeticAPEngine<LowDiscrepancy>(bsmProcess)
+                .withSamples(1500)
+                .withSeed(mcSeed)));
+
+        startTime = std::chrono::steady_clock::now();
+
+        std::cout << "Asian Option price : " << discreteAsianOption.NPV() << std::endl;
+     
+        endTime = std::chrono::steady_clock::now();
+        us = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+     
+        std::cout << "Elapsed time: " << us / 1000000 << " s" << std::endl;
+
+        std::cout << "Calculation with constant parameters :" << std::endl;
+
+        const_bsm = true;
+        discreteAsianOption.setPricingEngine(
+            boost::shared_ptr<PricingEngine>(
+            MakeMCDiscreteArithmeticAPEngine<LowDiscrepancy>(bsmProcess)
+                .withSamples(1500)
+                .withSeed(mcSeed)
+                .withConstantParameters_asian(const_bsm)));
+
+        startTime = std::chrono::steady_clock::now();
+
+        std::cout << "Asian Option price : " << discreteAsianOption.NPV() << std::endl;
+
+        endTime = std::chrono::steady_clock::now();
+        us = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+
+        std::cout << "Elapsed time: " << us / 1000000 << " s" << std::endl;
+
         return 0;
 
     } catch (std::exception& e) {
