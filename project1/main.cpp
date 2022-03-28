@@ -52,14 +52,41 @@ int main() {
         // options
         VanillaOption europeanOption(payoff, europeanExercise);
 
+
+        /////////////////////////// Run MC with BS Constant Parameters /////////////////////
+        bool isConstant = true;
         Size timeSteps = 10;
         Size mcSeed = 42;
-        ext::shared_ptr<PricingEngine> mcengine;
-        mcengine = MakeMCEuropeanEngine_2<PseudoRandom>(bsmProcess)
+        ext::shared_ptr<PricingEngine> mcengine_const;
+        mcengine_const = MakeMCEuropeanEngine_2<PseudoRandom>(bsmProcess)
+            .withSteps(timeSteps)
+            .withAbsoluteTolerance(0.01)
+            .withSeed(mcSeed)
+            .isConstant(isConstant);
+        europeanOption.setPricingEngine(mcengine_const);
+
+        auto startTime_const = std::chrono::steady_clock::now();
+
+        Real NPV_const = europeanOption.NPV();
+
+        auto endTime_const = std::chrono::steady_clock::now();
+
+        double us_const = std::chrono::duration_cast<std::chrono::microseconds>(endTime_const - startTime_const).count();
+
+        std::cout << "NPV with Const BS param: " << NPV_const << std::endl;
+        std::cout << "Elapsed time with Const BS param: " << us_const / 1000000 << " s" << std::endl;
+
+        
+        /////////////////////////// Run MC with BS Non Constant Parameters /////////////////////
+        //bool isConstant = false;
+        // Size timeSteps = 10;
+        // Size mcSeed = 42;
+        ext::shared_ptr<PricingEngine> mcengine_BS;
+        mcengine_BS = MakeMCEuropeanEngine_2<PseudoRandom>(bsmProcess)
             .withSteps(timeSteps)
             .withAbsoluteTolerance(0.01)
             .withSeed(mcSeed);
-        europeanOption.setPricingEngine(mcengine);
+        europeanOption.setPricingEngine(mcengine_BS);
 
         auto startTime = std::chrono::steady_clock::now();
 
@@ -69,8 +96,22 @@ int main() {
 
         double us = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
 
-        std::cout << "NPV: " << NPV << std::endl;
-        std::cout << "Elapsed time: " << us / 1000000 << " s" << std::endl;
+        std::cout << "NPV with Non Const BS param: " << NPV << std::endl;
+        std::cout << "Elapsed time with Non Const BS param: " << us / 1000000 << " s" << std::endl;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         return 0;
 

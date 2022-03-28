@@ -31,7 +31,21 @@
 #include <ql/termstructures/volatility/equityfx/blackconstantvol.hpp>
 #include <ql/termstructures/volatility/equityfx/blackvariancecurve.hpp>
 
+#include "constantblackscholesprocess.hpp"
+#include <iostream>
+
 namespace QuantLib {
+
+
+    /* Let's modify MCEuropeanEngine_2 : public MCVanillaEngine 
+    
+    Here are the steps we followed :
+    1] Add an additionnal boolean parameter isConst
+    2] If it is true, the engine extracts the constant parameters from the original process (based on the exercise date of the option; for instance, 
+    the constant risk-free rate should be the zero-rate of the full risk-free curve at the exercise 
+    date) and runs the Monte Carlo simulation with an instance of the constant process
+    3] Override the pathGenerator method inherited from the parent class MCVanillaEngine
+
 
     //! European option pricing engine using Monte Carlo simulation
     /*! \ingroup vanillaengines
@@ -60,10 +74,71 @@ namespace QuantLib {
              Size requiredSamples,
              Real requiredTolerance,
              Size maxSamples,
-             BigNatural seed);
+             BigNatural seed,
+             bool isConstant); //Add the boolean to the MCEuropeanEngine_2 constructor
+
+        private:
+            bool isConstant; 
+
+            //We override the path generator found in the class MCVanillaEngine
+            ext::shared_ptr<path_generator_type> pathGenerator() const override 
+            {
+
+                Size dimensions = MCVanillaEngine<SingleVariate, RNG, S>::process_->factors();
+                TimeGrid grid = this->timeGrid();
+                typename RNG::rsg_type generator =
+                    RNG::make_sequence_generator(dimensions*(grid.size()-1),MCVanillaEngine<SingleVariate,RNG,S>::seed_);
+            
+            //If it is true, the engine extracts the constant param and runs the MC simulation
+            if (this->isConstant == true)
+            {
+                std::cout << "The Engine runs with constant BS parameters" << std::endl;
+                ext::shared_ptr<GeneralizedBlackScholesProcess> BS_process =
+                    ext::dynamic_pointer_cast<GeneralizedBlackScholesProcess>(this->process_);
+                
+                // We access the parameters from the GeneralizedBSProcess 
+                Time time_of_extraction = grid.back();
+                double strike = ext::dynamic_pointer_cast<StrikedTypePayoff>(MCVanillaEngine<SingleVariate, RNG, S>::arguments_.payoff)->strike();
+                double riskFreeRate_ = BS_process->riskFreeRate()->zeroRate(time_of_extraction, Continuous);
+                double dividendYield_ = BS_process->dividendYield()->zeroRate(time_of_extraction, Continuous);
+                double blackVolatility_ = BS_process->blackVolatility()->blackVol(time_of_extraction, strike);
+                double underlyingValue_ = BS_process->x0();
+
+
+                // Declaration of a constantblackscholesprocess with previous parameters
+                ext::shared_ptr<ConstantBlackScholesProcess> constantBSprocess(new ConstantBlackScholesProcess(riskFreeRate_, dividendYield_, underlyingValue_, blackVolatility_));
+                
+                // Return a new path generator
+                return ext::shared_ptr<path_generator_type>(
+                    new path_generator_type(constantBSprocess, grid,
+                        generator, MCVanillaEngine<SingleVariate, RNG, S>::brownianBridge_));
+
+
+            }
+            else{
+
+                //Standard return of path generator with non constant parameters
+                std::cout << "The Engine runs with non constant BS parameters" << std::endl;
+                return ext::shared_ptr<path_generator_type>(new path_generator_type(MCVanillaEngine<SingleVariate, RNG, S>::process_, grid,
+                        generator, MCVanillaEngine<SingleVariate, RNG, S>::brownianBridge_));
+
+                }   
+            }
+
+
+
       protected:
-        boost::shared_ptr<path_pricer_type> pathPricer() const;
+
+        //Override of the pathPricer
+        boost::shared_ptr<path_pricer_type> pathPricer() const override;
     };
+
+
+
+
+
+
+
 
     //! Monte Carlo European engine factory
     template <class RNG = PseudoRandom, class S = Statistics>
@@ -80,6 +155,7 @@ namespace QuantLib {
         MakeMCEuropeanEngine_2& withMaxSamples(Size samples);
         MakeMCEuropeanEngine_2& withSeed(BigNatural seed);
         MakeMCEuropeanEngine_2& withAntitheticVariate(bool b = true);
+        MakeMCEuropeanEngine_2& isConstant(bool isConstant); //boolean added
         // conversion to pricing engine
         operator boost::shared_ptr<PricingEngine>() const;
       private:
@@ -89,6 +165,7 @@ namespace QuantLib {
         Real tolerance_;
         bool brownianBridge_;
         BigNatural seed_;
+        bool isConstant_ ;//boolean added
     };
 
     class EuropeanPathPricer_2 : public PathPricer<Path> {
@@ -116,7 +193,8 @@ namespace QuantLib {
              Size requiredSamples,
              Real requiredTolerance,
              Size maxSamples,
-             BigNatural seed)
+             BigNatural seed,
+             bool isConstant) //boolean added
     : MCVanillaEngine<SingleVariate,RNG,S>(process,
                                            timeSteps,
                                            timeStepsPerYear,
@@ -126,8 +204,10 @@ namespace QuantLib {
                                            requiredSamples,
                                            requiredTolerance,
                                            maxSamples,
-                                           seed) {}
-
+                                           seed) 
+                                           {this->isConstant = isConstant;}
+    /*We need to definie in this constructor isConstant as it is not a parameter herited from
+    MCVanillaEngine */
 
     template <class RNG, class S>
     inline
@@ -159,7 +239,14 @@ namespace QuantLib {
     : process_(process), antithetic_(false),
       steps_(Null<Size>()), stepsPerYear_(Null<Size>()),
       samples_(Null<Size>()), maxSamples_(Null<Size>()),
-      tolerance_(Null<Real>()), brownianBridge_(false), seed_(0) {}
+      tolerance_(Null<Real>()), brownianBridge_(false), seed_(0), isConstant_(false) {} //
+
+    template <class RNG, class S>
+    inline MakeMCEuropeanEngine_2<RNG, S>&
+        MakeMCEuropeanEngine_2<RNG, S>::isConstant(bool isConstant) {
+        this->isConstant_ = isConstant; //
+        return *this;
+    }
 
     template <class RNG, class S>
     inline MakeMCEuropeanEngine_2<RNG,S>&
@@ -240,7 +327,8 @@ namespace QuantLib {
                                       antithetic_,
                                       samples_, tolerance_,
                                       maxSamples_,
-                                      seed_));
+                                      seed_,
+                                      isConstant_)); //
     }
 
 
