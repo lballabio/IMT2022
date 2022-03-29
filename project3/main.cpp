@@ -22,13 +22,13 @@ int main() {
         // modify the sample code below to suit your project
 
         Calendar calendar = TARGET();
-        Date today = Date(24, February, 2022);
+        Date today = Date(24, February, 2021);
         Settings::instance().evaluationDate() = today;
 
         Option::Type type(Option::Put);
         Real underlying = 36;
         Real strike = 40;
-        Date maturity(24, May, 2022);
+        Date maturity(24, May, 2021);
 
         ext::shared_ptr<Exercise> americanExercise(new AmericanExercise(today, maturity));
         ext::shared_ptr<StrikedTypePayoff> payoff(new PlainVanillaPayoff(type, strike));
@@ -51,7 +51,7 @@ int main() {
 
         Size timeSteps = 100;
         ext::shared_ptr<PricingEngine> engine(
-                new BinomialVanillaEngine_2<JarrowRudd_2>(bsmProcess,timeSteps));
+                new BinomialVanillaEngine_2<Joshi4_2>(bsmProcess,timeSteps));
         americanOption.setPricingEngine(engine);
 
         auto startTime = std::chrono::steady_clock::now();
@@ -61,8 +61,11 @@ int main() {
         auto endTime = std::chrono::steady_clock::now();
 
         double us = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
-
+        Real delta = americanOption.delta();
+        Real gamma = americanOption.gamma();
         std::cout << "NPV: " << NPV << std::endl;
+        std::cout << "Delta: " << delta << std::endl;
+        std::cout << "Gamma: " << gamma << std::endl;
         std::cout << "Elapsed time: " << us / 1000000 << " s" << std::endl;
 
         return 0;
