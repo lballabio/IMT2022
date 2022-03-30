@@ -50,9 +50,11 @@ int main() {
         VanillaOption americanOption(payoff, americanExercise);
 
         Size timeSteps = 100;
-        ext::shared_ptr<PricingEngine> engine(
+
+        // JarrowRudd_2 Tree
+        ext::shared_ptr<PricingEngine> JRengine(
                 new BinomialVanillaEngine_2<JarrowRudd_2>(bsmProcess,timeSteps));
-        americanOption.setPricingEngine(engine);
+        americanOption.setPricingEngine(JRengine);
 
         auto startTime = std::chrono::steady_clock::now();
 
@@ -61,9 +63,128 @@ int main() {
         auto endTime = std::chrono::steady_clock::now();
 
         double us = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
-
+        Real delta = americanOption.delta();
+        Real gamma = americanOption.gamma();
+        std::cout << "Tree type : JarrowRudd_2" << std::endl; 
         std::cout << "NPV: " << NPV << std::endl;
         std::cout << "Elapsed time: " << us / 1000000 << " s" << std::endl;
+        std::cout << std::endl;
+
+        // CoxRossRubinstein_2 Tree
+        ext::shared_ptr<PricingEngine> CRRengine(
+                new BinomialVanillaEngine_2<CoxRossRubinstein_2>(bsmProcess,timeSteps));
+        americanOption.setPricingEngine(CRRengine);
+
+        startTime = std::chrono::steady_clock::now();
+
+        NPV = americanOption.NPV();
+
+        endTime = std::chrono::steady_clock::now();
+
+        us = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+        delta = americanOption.delta();
+        gamma = americanOption.gamma();
+        std::cout << "Tree type : CoxRossRubinstein_2" << std::endl; 
+        std::cout << "NPV: " << NPV << std::endl;
+        std::cout << "Elapsed time: " << us / 1000000 << " s" << std::endl;
+        std::cout << std::endl;
+
+        // AdditiveEQPBinomialTree_2 Tree
+        ext::shared_ptr<PricingEngine> EQPBengine(
+                new BinomialVanillaEngine_2<AdditiveEQPBinomialTree_2>(bsmProcess,timeSteps));
+        americanOption.setPricingEngine(EQPBengine);
+
+        startTime = std::chrono::steady_clock::now();
+
+        NPV = americanOption.NPV();
+
+        endTime = std::chrono::steady_clock::now();
+
+        us = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+        delta = americanOption.delta();
+        gamma = americanOption.gamma();
+        std::cout << "Tree type : AdditiveEQPBinomialTree_2" << std::endl; 
+        std::cout << "NPV: " << NPV << std::endl;
+        std::cout << "Elapsed time: " << us / 1000000 << " s" << std::endl;
+        std::cout << std::endl;
+
+        // Trigeorgis_2 Tree
+        ext::shared_ptr<PricingEngine> Triengine(
+                new BinomialVanillaEngine_2<Trigeorgis_2>(bsmProcess,timeSteps));
+        americanOption.setPricingEngine(Triengine);
+
+        startTime = std::chrono::steady_clock::now();
+
+        NPV = americanOption.NPV();
+
+        endTime = std::chrono::steady_clock::now();
+
+        us = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+        delta = americanOption.delta();
+        gamma = americanOption.gamma();
+        std::cout << "Tree type : Trigeorgis_2" << std::endl; 
+        std::cout << "NPV: " << NPV << std::endl;
+        std::cout << "Elapsed time: " << us / 1000000 << " s" << std::endl;
+        std::cout << std::endl;
+
+        // Tian_2
+        ext::shared_ptr<PricingEngine> Tianengine(
+                new BinomialVanillaEngine_2<Tian_2>(bsmProcess,timeSteps));
+        americanOption.setPricingEngine(Tianengine);
+
+        startTime = std::chrono::steady_clock::now();
+
+        NPV = americanOption.NPV();
+
+        endTime = std::chrono::steady_clock::now();
+
+        us = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+        delta = americanOption.delta();
+        gamma = americanOption.gamma();
+        std::cout << "Tree type : Tian_2" << std::endl; 
+        std::cout << "NPV: " << NPV << std::endl;
+        std::cout << "Elapsed time: " << us / 1000000 << " s" << std::endl;
+        std::cout << std::endl;
+
+        // LeisenReimer_2 Tree
+        ext::shared_ptr<PricingEngine> Leisenengine(
+                new BinomialVanillaEngine_2<Trigeorgis_2>(bsmProcess,timeSteps));
+        americanOption.setPricingEngine(Leisenengine);
+
+        startTime = std::chrono::steady_clock::now();
+
+        NPV = americanOption.NPV();
+
+        endTime = std::chrono::steady_clock::now();
+
+        us = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+        delta = americanOption.delta();
+        gamma = americanOption.gamma();
+        std::cout << "Tree type : LeisenReimer_2" << std::endl; 
+        std::cout << "NPV: " << NPV << std::endl;
+        std::cout << "Elapsed time: " << us / 1000000 << " s" << std::endl;
+        std::cout << std::endl;
+
+        // Joshi4_2 Tree
+        ext::shared_ptr<PricingEngine> Joshinengine(
+                new BinomialVanillaEngine_2<Joshi4_2>(bsmProcess,timeSteps));
+        americanOption.setPricingEngine(Joshiengine);
+
+        startTime = std::chrono::steady_clock::now();
+
+        NPV = americanOption.NPV();
+
+        endTime = std::chrono::steady_clock::now();
+
+        us = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
+        delta = americanOption.delta();
+        gamma = americanOption.gamma();
+        std::cout << "Tree type : Joshi4_2" << std::endl; 
+        std::cout << "NPV: " << NPV << std::endl;
+        std::cout << "Elapsed time: " << us / 1000000 << " s" << std::endl;
+        std::cout << std::endl;
+
+
 
         return 0;
 
