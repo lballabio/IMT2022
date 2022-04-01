@@ -28,7 +28,7 @@ int main() {
         
         std::ofstream resultats("Resultats.csv");
         //resultats.open("Resultats.csv");
-        resultats << "step, sample, const_err, const_npv, const_time, err, npv, time," << "\n";
+        resultats << "step, sample, const_npv, const_err, const_time, npv, err time," << "\n";
         
         
         Calendar calendar = TARGET();
@@ -38,7 +38,7 @@ int main() {
         Option::Type type(Option::Put);
         Real underlying = 36;
         Real strike = 40;
-        Date maturity(24, May, 2022);
+        Date maturity(24, August, 2022);
         
         std::cout << "-------------------------------" << std::endl;
         std::cout << "Date: " << today << std::endl;
@@ -66,15 +66,17 @@ int main() {
         // options
         VanillaOption europeanOption(payoff, europeanExercise);
 
-        Size timeSteps = 11;
+        Size timeSteps = 10;
         Size mcSeed = 42;
         bool constantParameters = true;
         
         
-        int max_samples = 6;
-        int max_steps = 2;
+        int max_samples = 7;
+        int max_steps = 4;
         Size nbrSamples = 10;
         
+        // We create a loop in order to do several runs in one
+        // by changing the number of steps and samples
         for (int i=1; i < max_steps; i++){
             for (int j=2; j<max_samples; j++) {
                 
@@ -106,6 +108,8 @@ int main() {
                 std::cout << "NPV: " << NPV1 << std::endl;
                 std::cout << "Estimation of Error: " << errorEstimate1 << std::endl;
                 std::cout << "Elapsed time: " << us1 / 1000000 << " s" << std::endl;
+                std::cout << "time Steps: " << timeSteps << std::endl;
+                std::cout << "Number of Samples: " << nbrSamples << std::endl;
                 std::cout << "-------------------------------" << std::endl;
                 
                 
@@ -133,9 +137,11 @@ int main() {
                 std::cout << "NPV: " << NPV2 << std::endl;
                 std::cout << "Estimation of Error: " << errorEstimate2 << std::endl;
                 std::cout << "Elapsed time: " << us2 / 1000000 << " s" << std::endl;
+                std::cout << "time Stpes: " << timeSteps << std::endl;
+                std::cout << "Number of Samples: " << nbrSamples << std::endl;
                 std::cout << "-------------------------------" << std::endl;
                 
-                resultats << timeSteps << "," << nbrSamples << "," << errorEstimate1 << "," << NPV1 << "," << us1 << "," << errorEstimate2 << "," << NPV2 << "," << us2 << "\n";
+                resultats << timeSteps << "," << nbrSamples << "," << NPV1 << "," << errorEstimate1 << "," << us1 << "," << NPV2 << "," << errorEstimate2 << "," << us2 << "\n";
                 
             }
         }

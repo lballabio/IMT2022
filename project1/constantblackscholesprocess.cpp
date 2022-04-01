@@ -1,6 +1,5 @@
 
 #include "constantblackscholesprocess.hpp"
-
 #include <iostream>
 
 #include <ql/processes/eulerdiscretization.hpp>

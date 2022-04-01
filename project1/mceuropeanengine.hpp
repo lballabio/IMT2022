@@ -79,6 +79,7 @@ namespace QuantLib {
                 ext::shared_ptr<GeneralizedBlackScholesProcess> BS = ext::dynamic_pointer_cast<GeneralizedBlackScholesProcess>(this->process_);
                 Time extractionTime = grid.back();
                 
+                // creation of constant BS parameters
                 double underlyingValue = BS -> x0();
                 
                 double strike = ext::dynamic_pointer_cast<StrikedTypePayoff>(MCVanillaEngine<SingleVariate, RNG,S>::arguments_.payoff)->strike();
@@ -89,12 +90,15 @@ namespace QuantLib {
                 
                 double dividend = BS->dividendYield()->zeroRate(extractionTime,Continuous);
                 
+                // creation of constant BS process
                 ext::shared_ptr<ConstantBlackScholesProcess> constBS(new ConstantBlackScholesProcess(underlyingValue,riskFreeRate,volatility, dividend));
                 
+                // modification of the path generator with a constant BS process
                 return ext::shared_ptr<path_generator_type>(new path_generator_type(constBS, grid, generator, MCVanillaEngine<SingleVariate, RNG,S>::brownianBridge_));
             }
             
             else {
+                // call of the usual path generator 
                 return ext::shared_ptr<path_generator_type>(new path_generator_type(MCVanillaEngine<SingleVariate, RNG, S>::process_, grid, generator, MCVanillaEngine<SingleVariate, RNG,S>::brownianBridge_));
             }
         }
