@@ -15,9 +15,11 @@
 
 using namespace QuantLib;
 
-int main() {
+int main()
+{
 
-    try {
+    try
+    {
 
         // modify the sample code below to suit your project
 
@@ -38,20 +40,20 @@ int main() {
         DayCounter dayCounter = Actual365Fixed();
         Handle<YieldTermStructure> riskFreeRate(
             ext::shared_ptr<YieldTermStructure>(
-                new ZeroCurve({today, today + 6*Months}, {0.01, 0.015}, dayCounter)));
+                new ZeroCurve({today, today + 6 * Months}, {0.01, 0.015}, dayCounter)));
         Handle<BlackVolTermStructure> volatility(
             ext::shared_ptr<BlackVolTermStructure>(
-                new BlackVarianceCurve(today, {today+3*Months, today+6*Months}, {0.20, 0.25}, dayCounter)));
+                new BlackVarianceCurve(today, {today + 3 * Months, today + 6 * Months}, {0.20, 0.25}, dayCounter)));
 
         ext::shared_ptr<BlackScholesProcess> bsmProcess(
-                 new BlackScholesProcess(underlyingH, riskFreeRate, volatility));
+            new BlackScholesProcess(underlyingH, riskFreeRate, volatility));
 
         // options
         VanillaOption americanOption(payoff, americanExercise);
 
         Size timeSteps = 100;
         ext::shared_ptr<PricingEngine> engine(
-                new BinomialVanillaEngine_2<JarrowRudd_2>(bsmProcess,timeSteps));
+            new BinomialVanillaEngine_2<Joshi4_2>(bsmProcess, timeSteps));
         americanOption.setPricingEngine(engine);
 
         auto startTime = std::chrono::steady_clock::now();
@@ -61,18 +63,23 @@ int main() {
         auto endTime = std::chrono::steady_clock::now();
 
         double us = std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
-
+        Real delta = americanOption.delta();
+        Real gamma = americanOption.gamma();
         std::cout << "NPV: " << NPV << std::endl;
+        std::cout << "Delta: " << delta << std::endl;
+        std::cout << "Gamma: " << gamma << std::endl;
         std::cout << "Elapsed time: " << us / 1000000 << " s" << std::endl;
 
         return 0;
-
-    } catch (std::exception& e) {
+    }
+    catch (std::exception &e)
+    {
         std::cerr << e.what() << std::endl;
         return 1;
-    } catch (...) {
+    }
+    catch (...)
+    {
         std::cerr << "unknown error" << std::endl;
         return 1;
     }
 }
-
